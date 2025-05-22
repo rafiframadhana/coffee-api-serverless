@@ -6,41 +6,67 @@ const router = express.Router();
 // Get all coffees
 router.get("/", async (req, res) => {
   try {
-    const coffees = await Coffee.find();
-    res.status(200).json(coffees);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+    const coffee = await Coffee.find();
+    if (!coffee || coffee.length === 0) {
+      return res.status(404).json({ message: "No coffees found" });
+    }
+    res.status(200).json(coffee);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get single coffee
+router.get("/:id", async (req, res) => {
+  try {
+    const product = await Coffee.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: "Coffee not found" });
+    }
+    res.status(200).json(product);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
 // Create a new coffee
 router.post("/", async (req, res) => {
-  const coffee = new Coffee(req.body);
   try {
-    const savedCoffee = await coffee.save();
+    const newCoffee = new Coffee(req.body);
+    const savedCoffee = await newCoffee.save();
     res.status(201).json(savedCoffee);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
   }
 });
 
 // Update a coffee
-router.put("/:id", async (req, res) => {
+router.patch("/:id", async (req, res) => {
   try {
-    const updatedCoffee = await Coffee.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.status(200).json(updatedCoffee);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
+    const updatedCoffee = await Coffee.findByIdAndUpdate(
+      req.params.id,
+      { $set: req.body },
+      { new: true }
+    );
+
+    if (!updatedCoffee) return res.sendStatus(404);
+
+    res.status(200).send(updatedCoffee);
+  } catch (err) {
+    res.status(500).send({ error: err.message });
   }
 });
 
 // Delete a coffee
 router.delete("/:id", async (req, res) => {
   try {
-    await Coffee.findByIdAndDelete(req.params.id);
-    res.status(204).send();
-  } catch (error) {
-    res.status(400).json({ message: error.message });
+    const deletedCoffee = await Coffee.findByIdAndDelete(req.params.id);
+
+    if (!deletedCoffee) return res.sendStatus(404);
+
+    res.status(200).send(deletedCoffee);
+  } catch (err) {
+    res.status(500).send({ error: err.message });
   }
 });
 
